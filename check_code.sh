@@ -9,7 +9,7 @@ make_dirs=0
 student_names=$(ls -lA $SUBM_DIR | awk '{print $9}' | awk -F'_' '{print $1}' | uniq)
 
 open_jupyter() {
-    BROWSER=brave jupyter-notebook "$1" &
+    BROWSER=brave jupyter-notebook "$1" 1>/dev/null 2>/dev/null &
     JUPYTER_PID=$!  # Store the Jupyter process ID
     echo "Jupyter Notebook launched with PID: $JUPYTER_PID"
 }
@@ -32,8 +32,39 @@ run_python() {
 			cat ./err.log
 }
 
+run_and_check_python() {
+    run_python $1
+	vim $1
+}
+
+# Run python codes and notebooks
+run_ipynbs_and_pys() {
+	echo "Starting to run ipynbs..."
+    rm -rf "./.ipynb_checkpoints"
+	notebooks=$(find -type f -name '*.ipynb')
+	for j_notebook in $notebooks; do
+	    echo "Opening notebook $j_notebook..."
+		sleep 5
+	    open_jupyter $j_notebook
+	    echo "Press ENTER when you're done"
+	    read dummy
+	    close_jupyter 
+        echo "What do you think about jupyter notebook?"
+        rm -rf "./.ipynb_checkpoints"
+	done
+	echo "Starting to run pys..."
+	sleep 5
+    python_files=$(find -type f -name '*.py')
+	for file in $python_files; do
+        run_and_check_python $file
+	done
+
+}
+
 # Move the students' files to their respective dirs
 for name in $student_names; do
+    echo "Student name: $name"
+	sleep 2
     if [ $make_dirs == 1 ]; then
         # Create a directory for the student if it doesn't exist
         mkdir -p "$SUBM_DIR/$name"
@@ -42,11 +73,12 @@ for name in $student_names; do
     	find "$SUBM_DIR" -type f -name "${name}_*" -exec mv {} "$SUBM_DIR/$name/" \;
     fi
 	cd "$SUBM_DIR/$name"
-	j_notebook=$(find . -type f -name '*.ipynb')
-	open_jupyter $j_notebook
-	echo "Press ENTER when you're done"
-	read dummy
-	close_jupyter 
-    echo "What do you think about jupyter notebook?"
+	echo "Starting to run pys and ipynbs..."
+	sleep 5
+    run_ipynbs_and_pys
+	echo "How satisfactory is the student's result? On a scale 0-2"
+	read mark
+	echo $mark > mark.txt
+	exit 0
 done
 
