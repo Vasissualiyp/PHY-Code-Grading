@@ -44,16 +44,15 @@ run_ipynbs_and_pys() {
 	notebooks=$(find -type f -name '*.ipynb')
 	for j_notebook in $notebooks; do
 	    echo "Opening notebook $j_notebook..."
-		sleep 5
+		#sleep 2
 	    open_jupyter $j_notebook
 	    echo "Press ENTER when you're done"
 	    read dummy
 	    close_jupyter 
-        echo "What do you think about jupyter notebook?"
         rm -rf "./.ipynb_checkpoints"
 	done
 	echo "Starting to run pys..."
-	sleep 5
+	#sleep 2
     python_files=$(find -type f -name '*.py')
 	for file in $python_files; do
         run_and_check_python $file
@@ -64,7 +63,7 @@ run_ipynbs_and_pys() {
 # Move the students' files to their respective dirs
 for name in $student_names; do
     echo "Student name: $name"
-	sleep 2
+	#sleep 2
     if [ $make_dirs == 1 ]; then
         # Create a directory for the student if it doesn't exist
         mkdir -p "$SUBM_DIR/$name"
@@ -72,13 +71,14 @@ for name in $student_names; do
         # Move all files matching the student name into their directory
     	find "$SUBM_DIR" -type f -name "${name}_*" -exec mv {} "$SUBM_DIR/$name/" \;
     fi
-	cd "$SUBM_DIR/$name"
+	cd "$SUBM_DIR/$name" # Go into the dir of a student
 	echo "Starting to run pys and ipynbs..."
-	sleep 5
+	#sleep 2
     run_ipynbs_and_pys
 	echo "How satisfactory is the student's result? On a scale 0-2"
 	read mark
 	echo $mark > mark.txt
-	exit 0
+	cd ../.. # Go back to the root dir
+	#exit 0
 done
 
