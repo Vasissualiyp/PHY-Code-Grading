@@ -26,8 +26,10 @@
               numpy
               scipy
             ]))
+			jupyter
           ];
 		shellHook = ''
+		alias jop='BROWSER=brave jupyter-notebook'
 		echo "Welcome to PHY coding course grading flake!"
 		'';
         };
