@@ -3,8 +3,11 @@
 # This script checks that the code runs for each of the students
 
 SUBM_DIR="./submissions"
+output_csv="./allmarks.csv"
 
 make_dirs=0
+mark_assign=0
+create_csv=1
 
 student_names=$(ls -lA $SUBM_DIR | awk '{print $9}' | awk -F'_' '{print $1}' | uniq)
 
@@ -41,24 +44,32 @@ run_and_check_python() {
 run_ipynbs_and_pys() {
 	echo "Starting to run ipynbs..."
     rm -rf "./.ipynb_checkpoints"
-	notebooks=$(find -type f -name '*.ipynb')
-	for j_notebook in $notebooks; do
-	    echo "Opening notebook $j_notebook..."
-		#sleep 2
-	    open_jupyter $j_notebook
-	    echo "Press ENTER when you're done"
-	    read dummy
-	    close_jupyter 
-        rm -rf "./.ipynb_checkpoints"
-	done
+    echo "Starting to open notebooks..."
+    
+# Find notebooks and properly handle spaces
+find . -type f -name '*.ipynb' -print0 | while IFS= read -r -d '' j_notebook; do
+    echo "Opening notebook '$j_notebook'..."
+    open_jupyter "$j_notebook"
+    
+    # Wait for user input before closing
+    echo "Press ENTER when you're done"
+    # Redirect read input to /dev/tty to wait for user input
+    read dummy < /dev/tty
+    
+    close_jupyter
+    rm -rf "./.ipynb_checkpoints"
+done
 	echo "Starting to run pys..."
 	#sleep 2
     python_files=$(find -type f -name '*.py')
 	for file in $python_files; do
         run_and_check_python $file
 	done
-
 }
+
+if [ $create_csv == 1 ]; then
+    echo "ID,Mark" > "$output_file"
+fi
 
 # Move the students' files to their respective dirs
 for name in $student_names; do
@@ -71,14 +82,17 @@ for name in $student_names; do
         # Move all files matching the student name into their directory
     	find "$SUBM_DIR" -type f -name "${name}_*" -exec mv {} "$SUBM_DIR/$name/" \;
     fi
-	cd "$SUBM_DIR/$name" # Go into the dir of a student
-	echo "Starting to run pys and ipynbs..."
-	#sleep 2
-    run_ipynbs_and_pys
-	echo "How satisfactory is the student's result? On a scale 0-2"
-	read mark
-	echo $mark > mark.txt
-	cd ../.. # Go back to the root dir
-	#exit 0
+    if [ $mark_assign == 1 ]; then
+	    cd "$SUBM_DIR/$name" # Go into the dir of a student
+        run_ipynbs_and_pys
+	    echo "How satisfactory is the student's result? On a scale 0-2"
+	    read mark
+	    echo $mark > mark.txt
+	    cd ../.. # Go back to the root dir
+    fi
+    if [ $create_csv == 1 ]; then
+	    mark=$(cat "$SUBM_DIR/$name/mark.txt")
+	    echo "$name,$mark" >> "$output_csv"
+	fi
 done
 
